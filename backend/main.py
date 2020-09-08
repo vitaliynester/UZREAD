@@ -141,23 +141,31 @@ def get_page(query, page_num = 1):
 
 @app.route('/book_url', methods=['GET'])
 def get_book_data_route():
-    result_json.clear()
-    result_pages.clear()
+    try:
+        result_json.clear()
+        result_pages.clear()
 
-    book_url = request.args.get('book_url', None)
-    data = get_book_data(book_url)
-    return jsonify(data)
+        book_url = request.args.get('book_url', None)
+        data = get_book_data(book_url)
+        return jsonify(data)
+    except Exception as e:
+        return {"msg": str(e)} 
+
 
 
 @app.route('/book', methods=['GET'])
 def get_books_by_name():
-    result_json.clear()
-    result_pages.clear()
+    try:
+        result_json.clear()
+        result_pages.clear()
 
-    book_name = request.args.get('book_name', None)
-    book_page = request.args.get('book_page', 1)
-    data = get_page(book_name, int(book_page))
-    return jsonify(data)
+        book_name = request.args.get('book_name', None)
+        book_page = request.args.get('book_page', 1)
+        data = get_page(book_name, int(book_page))
+        return jsonify(data)
+    except Exception as e:
+        return {"msg": str(e)}
+
 
 
 @app.route('/check', methods=['GET'])
