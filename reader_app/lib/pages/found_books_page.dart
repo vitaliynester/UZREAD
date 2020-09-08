@@ -42,7 +42,7 @@ class _FoundBooksPageState extends State<FoundBooksPage> {
   }
 
   Future getBookInformation(SearchModel book) async {
-    var url = "http://192.168.0.109:5000/book_url?book_url=${book.url}";
+    var url = "http://93.170.123.234:5000/book_url?book_url=${book.url}";
     var avConnection = await check();
     if (avConnection == false) {
       Navigator.of(context).pop(true);
@@ -70,7 +70,7 @@ class _FoundBooksPageState extends State<FoundBooksPage> {
       return null;
     }
     var url =
-        "http://192.168.0.109:5000/book?book_name=${widget.query}&book_page=$_currentPage";
+        "http://93.170.123.234:5000/book?book_name=${widget.query}&book_page=$_currentPage";
     print(url);
     try {
       setState(() {
@@ -94,7 +94,8 @@ class _FoundBooksPageState extends State<FoundBooksPage> {
           nextPagesBook.add(sm);
         }
       }
-      nextPagesBook.removeWhere((item) => item.title == null);
+      nextPagesBook
+          .removeWhere((item) => item.url == null || item.title == null);
       for (var book in nextPagesBook) {
         await getBookInformation(book);
       }
@@ -113,7 +114,7 @@ class _FoundBooksPageState extends State<FoundBooksPage> {
   }
 
   Future<List<SearchModel>> _getResponse() async {
-    var url = "http://192.168.0.109:5000/book?book_name=${widget.query}";
+    var url = "http://93.170.123.234:5000/book?book_name=${widget.query}";
     var avConnection = await check();
     if (avConnection == false) {
       Navigator.of(context).pop(true);
@@ -151,6 +152,7 @@ class _FoundBooksPageState extends State<FoundBooksPage> {
             await getBookInformation(sm);
           }
         }
+        response.removeWhere((item) => item.url == null || item.title == null);
         _smResponse = response;
         setState(() {
           _isLoading = false;

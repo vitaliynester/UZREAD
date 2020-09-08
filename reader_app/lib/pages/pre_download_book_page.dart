@@ -69,7 +69,7 @@ class _PreDownloadBookPageState extends State<PreDownloadBookPage> {
   }
 
   Future<PreDownloadModel> _getResponse() async {
-    var url = "http://192.168.0.109:5000/book_url?book_url=${widget.url}";
+    var url = "http://93.170.123.234:5000/book_url?book_url=${widget.url}";
     var avConnection = await check();
     if (avConnection == false) {
       Navigator.of(context).pop(true);
@@ -395,6 +395,7 @@ class _PreDownloadBookPageState extends State<PreDownloadBookPage> {
                               } else {
                                 FlutterDownloader.open(taskId: _bookId);
                               }
+
                               break;
                           }
                         },
