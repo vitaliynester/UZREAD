@@ -1,0 +1,122 @@
+import 'package:flutter/material.dart';
+import 'package:reader_app/components/search_field.dart';
+import 'package:reader_app/localization/demo_localization.dart';
+import 'package:reader_app/main.dart';
+import 'package:reader_app/models/language.dart';
+
+import '../constants.dart';
+
+class SearchPage extends StatefulWidget {
+  @override
+  _SearchPageState createState() => _SearchPageState();
+}
+
+class _SearchPageState extends State<SearchPage> {
+  Image backgroundImage;
+
+  @override
+  void initState() {
+    super.initState();
+    backgroundImage = Image.asset('lib/assets/uzlib_png.png');
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    precacheImage(backgroundImage.image, context);
+  }
+
+  void _changeLanguage(Language language) {
+    Locale _buf;
+    switch (language.languageCode) {
+      case 'en':
+        _buf = Locale(language.languageCode, 'US');
+        break;
+      case 'uz':
+        _buf = Locale(language.languageCode, 'UZ');
+        break;
+      case 'ru':
+        _buf = Locale(language.languageCode, 'RU');
+        break;
+      default:
+        _buf = Locale(language.languageCode, 'US');
+        break;
+    }
+    MyApp.setLocale(context, _buf);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        iconTheme: IconThemeData(
+          color: textColor,
+        ),
+        backgroundColor: Colors.transparent,
+        centerTitle: true,
+        elevation: 0,
+        toolbarHeight: 50,
+        leading: IconButton(
+          icon: Icon(Icons.info),
+          onPressed: () {
+            showAboutDialog(
+                context: context,
+                applicationIcon: FlutterLogo(),
+                applicationName: "UZLIB",
+                applicationVersion: '1.0',
+                children: <Widget>[
+                  Text(DemoLocalization.of(context)
+                      .getTranslatedValue("about_decription")),
+                ]);
+          },
+        ),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(0, 0, 20, 0),
+            child: DropdownButton(
+              underline: SizedBox(),
+              icon: Icon(
+                Icons.language,
+                color: textColor,
+              ),
+              items: Language.languageList()
+                  .map<DropdownMenuItem<Language>>((lang) => DropdownMenuItem(
+                        value: lang,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceAround,
+                          children: <Widget>[
+                            Text(
+                              lang.name,
+                              style: TextStyle(fontSize: 18),
+                            ),
+                            Text(
+                              lang.flag,
+                              style: TextStyle(fontSize: 20),
+                            )
+                          ],
+                        ),
+                      ))
+                  .toList(),
+              onChanged: (Language language) {
+                _changeLanguage(language);
+              },
+            ),
+          ),
+        ],
+      ),
+      backgroundColor: backgroudColor,
+      body: SingleChildScrollView(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            SizedBox(
+              height: 50,
+            ),
+            backgroundImage,
+            SearchBookField()
+          ],
+        ),
+      ),
+    );
+  }
+}
