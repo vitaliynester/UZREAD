@@ -6,7 +6,8 @@ class SearchModel {
   final String totalSize;
   final String url;
   final String year;
+  final String imageBook;
 
   SearchModel(this.authors, this.extension, this.pagesCount, this.title,
-      this.totalSize, this.url, this.year);
+      this.totalSize, this.url, this.year, this.imageBook);
 }

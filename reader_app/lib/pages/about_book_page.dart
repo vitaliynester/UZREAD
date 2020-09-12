@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:open_file/open_file.dart';
 import 'package:reader_app/constants.dart';
+import 'package:reader_app/localization/demo_localization.dart';
 import 'package:reader_app/models/downloaded_book_model.dart';
 
 class AboutBookPage extends StatefulWidget {
@@ -65,7 +66,7 @@ class _AboutBookPageState extends State<AboutBookPage> {
               Padding(
                 padding: const EdgeInsets.all(15.0),
                 child: Text(
-                  "Authors: ${widget.book.author}",
+                  "${DemoLocalization.of(context).getTranslatedValue("book_authors")}: ${widget.book.author}",
                   style: TextStyle(
                     color: textColor,
                     fontSize: 20,
@@ -82,7 +83,7 @@ class _AboutBookPageState extends State<AboutBookPage> {
                   ? Padding(
                       padding: const EdgeInsets.all(15.0),
                       child: Text(
-                        "Description: ${widget.book.description}",
+                        "${DemoLocalization.of(context).getTranslatedValue("description")}: ${widget.book.description}",
                         style: TextStyle(color: textColor, fontSize: 24),
                         textAlign: TextAlign.justify,
                       ),
@@ -99,7 +100,7 @@ class _AboutBookPageState extends State<AboutBookPage> {
                 child: Container(
                   padding: EdgeInsets.all(7.2),
                   child: Text(
-                    "Read",
+                    DemoLocalization.of(context).getTranslatedValue("read"),
                     style: TextStyle(color: backgroudColor, fontSize: 24),
                   ),
                   decoration: BoxDecoration(

@@ -4,8 +4,8 @@ import 'package:connectivity/connectivity.dart';
 import 'package:flutter/material.dart';
 import 'package:reader_app/components/book_card.dart';
 import 'package:reader_app/constants.dart';
+import 'package:reader_app/localization/demo_localization.dart';
 import 'package:reader_app/models/book_model.dart';
-import 'package:reader_app/models/pre_download_model.dart';
 import 'package:reader_app/models/search_model.dart';
 import 'package:http/http.dart' as http;
 import 'package:reader_app/pages/pre_download_book_page.dart';
@@ -24,36 +24,40 @@ class _FoundBooksPageState extends State<FoundBooksPage> {
   int _currentPage = 1;
   ScrollController _scrollController = ScrollController();
   List<SearchModel> _smResponse = new List<SearchModel>();
-  List<String> _listImages = new List<String>();
   Future<List<SearchModel>> _listFuture;
 
   @override
   void initState() {
     super.initState();
     _listFuture = _getResponse();
-    _scrollController.addListener(() {
-      if (_scrollController.position.pixels ==
-              _scrollController.position.maxScrollExtent &&
-          _currentPage != _countTotalPages &&
-          _isLoading == false) {
-        _listFuture = _getMoreData();
-      }
-    });
-  }
-
-  Future getBookInformation(SearchModel book) async {
-    var url = "http://93.170.123.234:5000/book_url?book_url=${book.url}";
-    var avConnection = await check();
-    if (avConnection == false) {
-      Navigator.of(context).pop(true);
-      return null;
+    try {
+      _scrollController.addListener(() async {
+        if (_scrollController.position.pixels ==
+                _scrollController.position.maxScrollExtent &&
+            _currentPage != _countTotalPages &&
+            _isLoading == false) {
+          var internetAccess = await check();
+          if (internetAccess) {
+            _listFuture = _getMoreData();
+          } else if (internetAccess == false) {
+            Scaffold.of(context).showSnackBar(
+              SnackBar(
+                backgroundColor: textColor.withOpacity(.2),
+                duration: Duration(seconds: 1),
+                content: Text(
+                  DemoLocalization.of(context)
+                      .getTranslatedValue("no_internet"),
+                ),
+              ),
+            );
+          }
+        }
+      });
+    } catch (e) {
+      Navigator.of(context).pop(
+        MyException.NoInternet,
+      );
     }
-    var data = await http.get(url);
-    PreDownloadModel infoBook =
-        new PreDownloadModel.fromJson(json.decode(data.body));
-    setState(() {
-      _listImages.add(infoBook.bookImage);
-    });
   }
 
   Future<List<SearchModel>> _getMoreData() async {
@@ -62,7 +66,8 @@ class _FoundBooksPageState extends State<FoundBooksPage> {
       setState(() {
         _isLoading = false;
       });
-      Navigator.of(context).pop(true);
+      Navigator.of(context).pop(MyException.NoInternet);
+      return _smResponse;
     }
     List<SearchModel> nextPagesBook = List<SearchModel>();
     _currentPage += 1;
@@ -70,8 +75,7 @@ class _FoundBooksPageState extends State<FoundBooksPage> {
       return null;
     }
     var url =
-        "http://93.170.123.234:5000/book?book_name=${widget.query}&book_page=$_currentPage";
-    print(url);
+        "http://93.170.123.234:5000/v1/book?book_name=${widget.query}&book_page=$_currentPage";
     try {
       setState(() {
         _isLoading = true;
@@ -90,15 +94,13 @@ class _FoundBooksPageState extends State<FoundBooksPage> {
               item["title"],
               item["total_size"],
               item["url"],
-              item["year"]);
+              item["year"],
+              item["image_book"]);
           nextPagesBook.add(sm);
         }
       }
       nextPagesBook
           .removeWhere((item) => item.url == null || item.title == null);
-      for (var book in nextPagesBook) {
-        await getBookInformation(book);
-      }
       setState(() {
         _isLoading = false;
         _smResponse.addAll(nextPagesBook);
@@ -109,15 +111,17 @@ class _FoundBooksPageState extends State<FoundBooksPage> {
         _currentPage -= 1;
         return _getMoreData();
       }
-      Navigator.of(context).pop(true);
+      Navigator.of(context).pop(
+        MyException.ServerException,
+      );
     }
   }
 
   Future<List<SearchModel>> _getResponse() async {
-    var url = "http://93.170.123.234:5000/book?book_name=${widget.query}";
+    var url = "http://93.170.123.234:5000/v1/book?book_name=${widget.query}";
     var avConnection = await check();
     if (avConnection == false) {
-      Navigator.of(context).pop(true);
+      Navigator.of(context).pop(MyException.NoInternet);
       return null;
     }
     if (_smResponse.length != 0) {
@@ -131,7 +135,7 @@ class _FoundBooksPageState extends State<FoundBooksPage> {
         var jsonData = json.decode(data.body);
         try {
           if (jsonData["msg"] != "") {
-            Navigator.of(context).pop(true);
+            Navigator.of(context).pop(MyException.ServerException);
             return null;
           }
         } catch (e) {}
@@ -147,9 +151,9 @@ class _FoundBooksPageState extends State<FoundBooksPage> {
                 item["title"],
                 item["total_size"],
                 item["url"],
-                item["year"]);
+                item["year"],
+                item["image_book"]);
             response.add(sm);
-            await getBookInformation(sm);
           }
         }
         response.removeWhere((item) => item.url == null || item.title == null);
@@ -205,32 +209,43 @@ class _FoundBooksPageState extends State<FoundBooksPage> {
                       _currentPage != _countTotalPages) {
                     return Center(child: CircularProgressIndicator());
                   } else if (_currentPage <= _countTotalPages) {
-                    String img;
-                    try {
-                      img = _listImages[index];
-                    } catch (e) {
-                      img = null;
-                    }
                     var book = new BookModel(
                         snapshot.data[index].title,
                         snapshot.data[index].authors,
                         snapshot.data[index].totalSize,
-                        img,
+                        snapshot.data[index].imageBook,
                         snapshot.data[index].title);
                     return GestureDetector(
-                      onTap: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (BuildContext context) =>
-                                new PreDownloadBookPage(
-                              url: snapshot.data[index].url,
-                              size: snapshot.data[index].totalSize,
-                              extension: snapshot.data[index].extension,
+                      onTap: () async {
+                        var internetAccess = await check();
+                        if (internetAccess) {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (BuildContext context) =>
+                                  new PreDownloadBookPage(
+                                url: snapshot.data[index].url,
+                                size: snapshot.data[index].totalSize,
+                                extension: snapshot.data[index].extension,
+                              ),
                             ),
-                          ),
-                        );
+                          );
+                        } else {
+                          Scaffold.of(context).showSnackBar(
+                            SnackBar(
+                              backgroundColor: textColor.withOpacity(.2),
+                              duration: Duration(seconds: 1),
+                              content: Text(
+                                DemoLocalization.of(context)
+                                    .getTranslatedValue("no_internet"),
+                              ),
+                            ),
+                          );
+                        }
                       },
-                      child: BookCard(bookModel: book),
+                      child: BookCard(
+                        bookModel: book,
+                        image: book.image,
+                      ),
                     );
                   }
                 } catch (e) {

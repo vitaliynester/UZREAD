@@ -37,7 +37,6 @@ class _DemoLocalizationDelegate
   const _DemoLocalizationDelegate();
   @override
   bool isSupported(Locale locale) {
-    print(locale.languageCode);
     return ['en', 'uz', 'ru'].contains(locale.languageCode);
   }
 

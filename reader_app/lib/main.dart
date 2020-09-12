@@ -9,7 +9,7 @@ import 'components/bottom_nav_bar.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await FlutterDownloader.initialize(
-    debug: true,
+    debug: false,
   );
   runApp(MyApp());
 }

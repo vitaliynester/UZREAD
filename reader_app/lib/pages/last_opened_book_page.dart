@@ -47,7 +47,10 @@ class _LastOpenedBookPageState extends State<LastOpenedBookPage> {
               );
             } else {
               return Center(
-                child: Text("NO LAST OPENED BOOK"),
+                child: Text(
+                  DemoLocalization.of(context)
+                      .getTranslatedValue("no_last_opened_book"),
+                ),
               );
             }
           },

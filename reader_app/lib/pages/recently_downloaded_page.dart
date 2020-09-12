@@ -1,7 +1,8 @@
 import 'dart:convert';
-import 'dart:io' as io;
+import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_downloader/flutter_downloader.dart';
 import 'package:reader_app/components/book_downlaoded_card.dart';
 import 'package:reader_app/constants.dart';
 import 'package:reader_app/localization/demo_localization.dart';
@@ -25,57 +26,58 @@ class _RecentlyDownloadedPageState extends State<RecentlyDownloadedPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        backgroundColor: backgroudColor,
-        appBar: AppBar(
-          backgroundColor: Colors.transparent,
-          centerTitle: true,
-          elevation: 0,
-          title: Text(
-            DemoLocalization.of(context)
-                .getTranslatedValue("recently_downloaded_title"),
-            style: TextStyle(
-              color: textColor,
-            ),
+      backgroundColor: backgroudColor,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        centerTitle: true,
+        elevation: 0,
+        title: Text(
+          DemoLocalization.of(context)
+              .getTranslatedValue("recently_downloaded_title"),
+          style: TextStyle(
+            color: textColor,
           ),
         ),
-        body: FutureBuilder(
-          future: _downloadedBooks,
-          builder: (context, snapshot) {
-            if (snapshot.hasData) {
-              if (snapshot.data.length > 0) {
-                return ListView.builder(
-                  itemCount: snapshot.data.length,
-                  itemBuilder: (context, index) {
-                    return GestureDetector(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          new MaterialPageRoute(
-                            builder: (BuildContext context) =>
-                                new AboutBookPage(
-                              book: snapshot.data[index],
-                            ),
+      ),
+      body: FutureBuilder(
+        future: _downloadedBooks,
+        builder: (context, snapshot) {
+          if (snapshot.hasData) {
+            if (snapshot.data.length > 0) {
+              return ListView.builder(
+                itemCount: snapshot.data.length,
+                itemBuilder: (context, index) {
+                  return GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        new MaterialPageRoute(
+                          builder: (BuildContext context) => new AboutBookPage(
+                            book: snapshot.data[index],
                           ),
-                        );
-                      },
-                      child: BookDownloadedCard(
-                        book: snapshot.data[index],
-                      ),
-                    );
-                  },
-                );
-              } else {
-                return Text("NO DATA");
-              }
-            } else {
-              return Center(
-                child: Text(
-                  "NO DOWNLOADED BOOKS",
-                ),
+                        ),
+                      );
+                    },
+                    child: BookDownloadedCard(
+                      book: snapshot.data[index],
+                    ),
+                  );
+                },
               );
+            } else {
+              return Text("NO DATA");
             }
-          },
-        ));
+          } else {
+            return Center(
+              child: Text(
+                DemoLocalization.of(context)
+                    .getTranslatedValue("no_downloaded_books"),
+              ),
+            );
+          }
+        },
+      ),
+    );
   }
 }
 
@@ -94,12 +96,12 @@ List<DownloadedBookModel> getBooksFromFile(String jsonSourceData) {
 }
 
 Future<bool> checkFileExist(String fileName, String filePath) async {
-  bool exist = await io.File("$filePath/$fileName").exists();
+  bool exist = await File("$filePath/$fileName").exists();
   return exist;
 }
 
 Future<bool> checkBookFileExist(String bookPath) async {
-  bool exist = await io.File(bookPath).exists();
+  bool exist = await File(bookPath).exists();
   return exist;
 }
 
@@ -109,7 +111,7 @@ Future<List<DownloadedBookModel>> removeDeletedBooks() async {
   if (existJson) {
     List<DownloadedBookModel> existingBooks = new List<DownloadedBookModel>();
     var jsonSourceData =
-        await io.File("/storage/emulated/0/Uzlib/downloaded_books.json")
+        await File("/storage/emulated/0/Uzlib/downloaded_books.json")
             .readAsString();
     var allBooks = getBooksFromFile(jsonSourceData);
     for (var book in allBooks) {
@@ -117,6 +119,8 @@ Future<List<DownloadedBookModel>> removeDeletedBooks() async {
         existingBooks.add(book);
       }
     }
+    await File("/storage/emulated/0/Uzlib/downloaded_books.json")
+        .writeAsString(json.encode(existingBooks));
     return existingBooks;
   }
   return null;
@@ -124,5 +128,16 @@ Future<List<DownloadedBookModel>> removeDeletedBooks() async {
 
 Future<List<DownloadedBookModel>> getDownloadedBook() async {
   List<DownloadedBookModel> books = await removeDeletedBooks();
-  return books;
+  List<DownloadedBookModel> resultBooks = new List<DownloadedBookModel>();
+  for (var book in books) {
+    var buf = book.bookPath.split('/');
+    var bookFileName = buf[buf.length - 1];
+    var tasks = await FlutterDownloader.loadTasksWithRawQuery(
+        query:
+            'SELECT * FROM task WHERE status=2 AND file_name = "$bookFileName"');
+    if (tasks.length == 0) {
+      resultBooks.add(book);
+    }
+  }
+  return resultBooks;
 }

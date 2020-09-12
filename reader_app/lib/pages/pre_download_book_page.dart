@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io' as io;
+import 'dart:io';
 import 'dart:isolate';
 import 'dart:ui';
 
@@ -30,13 +31,12 @@ class PreDownloadBookPage extends StatefulWidget {
 
 class _PreDownloadBookPageState extends State<PreDownloadBookPage> {
   Future<PreDownloadModel> _book;
-  String _bookId;
-  String _bookPath;
-  bool _isLoading = true;
+  PreDownloadModel _bookToFile;
+  DownloadedBookModel _downloadedBook;
+  String _pathToBook;
   bool _existBook = false;
-  DownloadStatus _status;
+  DownloadStatus _status = null;
   String _buttonText = "";
-  int _countDownloads = 0;
   ReceivePort _receivePort = new ReceivePort();
 
   readyToDownload(AsyncSnapshot<dynamic> snapshot) async {
@@ -44,17 +44,11 @@ class _PreDownloadBookPageState extends State<PreDownloadBookPage> {
     if (status.isGranted) {
       setStateIfMounted(() {
         _status = DownloadStatus.loading;
-        _buttonText = "Downloading...";
+        _buttonText =
+            DemoLocalization.of(context).getTranslatedValue("downloading");
       });
       await downloadBook(snapshot.data.bookDownloadUrl, snapshot.data.bookImage,
           snapshot.data.bookName);
-      var downloadedBook = createObjectAfterDownload(new PreDownloadModel(
-          snapshot.data.bookAuthors,
-          snapshot.data.bookDescription,
-          snapshot.data.bookDownloadUrl,
-          snapshot.data.bookImage,
-          snapshot.data.bookName));
-      await writeToDownloadedList(downloadedBook);
     }
   }
 
@@ -72,15 +66,12 @@ class _PreDownloadBookPageState extends State<PreDownloadBookPage> {
     var url = "http://93.170.123.234:5000/book_url?book_url=${widget.url}";
     var avConnection = await check();
     if (avConnection == false) {
-      Navigator.of(context).pop(true);
+      Navigator.of(context).pop(MyException.NoInternet);
       return null;
     }
 
     try {
       var data = await http.get(url);
-      setState(() {
-        _isLoading = true;
-      });
       var jsonData = json.decode(data.body);
       var book = new PreDownloadModel(
           jsonData["book_authors"],
@@ -88,16 +79,29 @@ class _PreDownloadBookPageState extends State<PreDownloadBookPage> {
           jsonData["book_download_url"],
           jsonData["book_image"],
           jsonData["book_name"]);
+      var tasks = await FlutterDownloader.loadTasksWithRawQuery(
+          query:
+              'SELECT * FROM task WHERE status=2 AND file_name = "${book.bookName.replaceAll(" ", "_")}.${widget.extension}"');
+      _downloadedBook = createObjectAfterDownload(book);
+      if (tasks.length > 0) {
+        setStateIfMounted(() {
+          _status = DownloadStatus.loading;
+        });
+      }
       bool existBook = await checkFileExist(
           "${book.bookName.replaceAll(" ", "_")}.${widget.extension}",
           "/storage/emulated/0/Uzlib/books");
+      if (existBook && tasks.length == 0) {
+        setStateIfMounted(() {
+          _status = DownloadStatus.readyToRead;
+        });
+      }
       setStateIfMounted(() {
-        _isLoading = false;
+        _bookToFile = book;
         _existBook = existBook;
-        _existBook
-            ? _status = DownloadStatus.readyToRead
-            : _status = DownloadStatus.readyToDownload;
-
+        if (_status == null) {
+          _status = DownloadStatus.readyToDownload;
+        }
         buttonText();
       });
       return book;
@@ -113,22 +117,59 @@ class _PreDownloadBookPageState extends State<PreDownloadBookPage> {
   @override
   void initState() {
     _book = _getResponse();
-
     IsolateNameServer.registerPortWithName(
         _receivePort.sendPort, 'downloader_send_port');
-    _receivePort.listen((dynamic data) {
+    _receivePort.listen((dynamic data) async {
       DownloadTaskStatus status = data[1];
-      if (status == DownloadTaskStatus(3)) {
-        _countDownloads++;
-        print(_countDownloads);
-        if (_countDownloads == 2) {
-          _countDownloads = 0;
+      var name = await _book.then((value) =>
+          "${value.bookName.replaceAll(" ", "_")}.${widget.extension}");
+
+      if (status == DownloadTaskStatus(2)) {
+        final tasks = await FlutterDownloader.loadTasksWithRawQuery(
+            query: 'SELECT * FROM task WHERE status=2 AND file_name = "$name"');
+        if (tasks.length > 0) {
           setStateIfMounted(() {
-            _status = DownloadStatus.readyToRead;
-            _buttonText = "Read";
-            _bookId = data[0];
+            _status = DownloadStatus.loading;
+            _buttonText =
+                DemoLocalization.of(context).getTranslatedValue("downloading");
           });
         }
+      }
+      if (status == DownloadTaskStatus(3)) {
+        final tasks = await FlutterDownloader.loadTasksWithRawQuery(
+            query: 'SELECT * FROM task WHERE status=3 AND file_name = "$name"');
+        if (tasks.length > 0) {
+          var downloadedBook = createObjectAfterDownload(_bookToFile);
+          await writeToDownloadedList(downloadedBook);
+          setStateIfMounted(() {
+            _status = DownloadStatus.readyToRead;
+            _existBook = true;
+            _buttonText =
+                DemoLocalization.of(context).getTranslatedValue("read");
+          });
+        }
+      }
+      if (data[2] > 0) {
+        final tasks = await FlutterDownloader.loadTasksWithRawQuery(
+            query:
+                'SELECT * FROM task WHERE status=2 AND file_name = "$name" AND progress=100');
+        if (tasks.length > 0) {
+          var downloadedBook = createObjectAfterDownload(_bookToFile);
+          await writeToDownloadedList(downloadedBook);
+          setStateIfMounted(() {
+            _status = DownloadStatus.readyToRead;
+            _existBook = true;
+            _buttonText =
+                DemoLocalization.of(context).getTranslatedValue("read");
+          });
+        }
+      }
+      if (status == DownloadTaskStatus(4)) {
+        setStateIfMounted(() {
+          _status = DownloadStatus.readyToDownload;
+          _buttonText =
+              DemoLocalization.of(context).getTranslatedValue("retry");
+        });
       }
     });
 
@@ -138,8 +179,13 @@ class _PreDownloadBookPageState extends State<PreDownloadBookPage> {
   }
 
   @override
-  void dispose() {
+  Future<void> dispose() async {
     IsolateNameServer.removePortNameMapping("downloader_send_port");
+    if (!_existBook) {
+      if (_bookToFile != null) {
+        await writeToDownloadedList(createObjectAfterDownload(_bookToFile));
+      }
+    }
     super.dispose();
   }
 
@@ -175,30 +221,30 @@ class _PreDownloadBookPageState extends State<PreDownloadBookPage> {
       showNotification: true,
       openFileFromNotification: true,
     );
-    setStateIfMounted(() {
-      _bookPath = fileBookName;
-    });
+    var downloadedBook = createObjectAfterDownload(_bookToFile);
+    _downloadedBook = downloadedBook;
+    await writeToDownloadedList(downloadedBook);
   }
 
   void buttonText() {
     setStateIfMounted(() {
-      _existBook
-          ? _status = DownloadStatus.readyToRead
-          : _status = DownloadStatus.readyToDownload;
       switch (_status) {
         case DownloadStatus.loading:
           setStateIfMounted(() {
-            _buttonText = "Downloading ...";
+            _buttonText =
+                DemoLocalization.of(context).getTranslatedValue("downloading");
           });
           break;
         case DownloadStatus.readyToDownload:
           setStateIfMounted(() {
-            _buttonText = "Download (${widget.size})";
+            _buttonText =
+                "${DemoLocalization.of(context).getTranslatedValue("download")} (${widget.size})";
           });
           break;
         case DownloadStatus.readyToRead:
           setStateIfMounted(() {
-            _buttonText = "Read";
+            _buttonText =
+                DemoLocalization.of(context).getTranslatedValue("read");
           });
           break;
       }
@@ -230,11 +276,6 @@ class _PreDownloadBookPageState extends State<PreDownloadBookPage> {
 
   Future<bool> checkFileExist(String fileName, String filePath) async {
     bool exist = await io.File("$filePath/$fileName").exists();
-    if (exist) {
-      setStateIfMounted(() {
-        _bookPath = "$filePath/$fileName";
-      });
-    }
     return exist;
   }
 
@@ -292,140 +333,140 @@ class _PreDownloadBookPageState extends State<PreDownloadBookPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(
-          title: Text(
-            "Book description",
-            style: TextStyle(color: textColor),
-          ),
-          centerTitle: true,
-          iconTheme: IconThemeData(
-            color: textColor,
-          ),
-          backgroundColor: Colors.transparent,
-          elevation: 0,
+      appBar: AppBar(
+        title: Text(
+          DemoLocalization.of(context).getTranslatedValue("book_description"),
+          style: TextStyle(color: textColor),
         ),
-        body: FutureBuilder(
-          future: _book,
-          builder: (context, snapshot) {
-            if (snapshot.hasData) {
-              return SingleChildScrollView(
-                child: Center(
-                  child: Column(
-                    children: [
-                      Text(
-                        DemoLocalization.of(context)
-                            .getTranslatedValue("details_title"),
+        centerTitle: true,
+        iconTheme: IconThemeData(
+          color: textColor,
+        ),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+      ),
+      body: FutureBuilder(
+        future: _book,
+        builder: (context, snapshot) {
+          if (snapshot.hasData) {
+            return SingleChildScrollView(
+              child: Center(
+                child: Column(
+                  children: [
+                    Text(
+                      DemoLocalization.of(context)
+                          .getTranslatedValue("details_title"),
+                      style: TextStyle(
+                        color: textColor,
+                        fontSize: 24,
+                      ),
+                    ),
+                    SizedBox(
+                      height: 10,
+                    ),
+                    Container(
+                      height: 300,
+                      child: snapshot.data.bookImage != null
+                          ? Image.network(snapshot.data.bookImage)
+                          : Image.asset('lib/assets/empty_book.png'),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.all(15.0),
+                      child: Text(
+                        snapshot.data.bookName,
+                        style: TextStyle(color: textColor, fontSize: 20),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                    SizedBox(
+                      height: 10,
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.all(15.0),
+                      child: Text(
+                        "${DemoLocalization.of(context).getTranslatedValue("book_authors")}: ${snapshot.data.bookAuthors}",
                         style: TextStyle(
                           color: textColor,
-                          fontSize: 24,
+                          fontSize: 20,
+                          fontStyle: FontStyle.italic,
+                          fontWeight: FontWeight.bold,
                         ),
+                        textAlign: TextAlign.center,
                       ),
-                      SizedBox(
-                        height: 10,
-                      ),
-                      Container(
-                        height: 300,
-                        child: snapshot.data.bookImage != null
-                            ? Image.network(snapshot.data.bookImage)
-                            : Image.asset('lib/assets/empty_book.png'),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.all(15.0),
-                        child: Text(
-                          snapshot.data.bookName,
-                          style: TextStyle(color: textColor, fontSize: 20),
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                      SizedBox(
-                        height: 10,
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.all(15.0),
-                        child: Text(
-                          "Authors: ${snapshot.data.bookAuthors}",
-                          style: TextStyle(
-                            color: textColor,
-                            fontSize: 20,
-                            fontStyle: FontStyle.italic,
-                            fontWeight: FontWeight.bold,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                      SizedBox(
-                        height: 10,
-                      ),
-                      snapshot.data.bookDescription != ""
-                          ? Padding(
-                              padding: const EdgeInsets.all(15.0),
-                              child: Text(
-                                "Description: ${snapshot.data.bookDescription}",
-                                style:
-                                    TextStyle(color: textColor, fontSize: 24),
-                                textAlign: TextAlign.justify,
-                              ),
-                            )
-                          : Container(),
-                      SizedBox(
-                        height: 25,
-                      ),
-                      GestureDetector(
-                        onTap: () async {
-                          switch (_status) {
-                            case DownloadStatus.readyToDownload:
-                              setStateIfMounted(() {
-                                _status = DownloadStatus.loading;
-                              });
-                              await readyToDownload(snapshot);
-                              return;
-                            case DownloadStatus.loading:
-                              Scaffold.of(context).showSnackBar(
-                                new SnackBar(
-                                  content: Text(
-                                    "Error! Book already downloading!",
-                                  ),
-                                  backgroundColor: textColor.withOpacity(.2),
+                    ),
+                    SizedBox(
+                      height: 10,
+                    ),
+                    snapshot.data.bookDescription != ""
+                        ? Padding(
+                            padding: const EdgeInsets.all(15.0),
+                            child: Text(
+                              "${DemoLocalization.of(context).getTranslatedValue("description")}: ${snapshot.data.bookDescription}",
+                              style: TextStyle(color: textColor, fontSize: 24),
+                              textAlign: TextAlign.justify,
+                            ),
+                          )
+                        : Container(),
+                    SizedBox(
+                      height: 25,
+                    ),
+                    GestureDetector(
+                      onTap: () async {
+                        switch (_status) {
+                          case DownloadStatus.readyToDownload:
+                            setStateIfMounted(() {
+                              _status = DownloadStatus.loading;
+                            });
+                            await readyToDownload(snapshot);
+                            return;
+                          case DownloadStatus.loading:
+                            Scaffold.of(context).showSnackBar(
+                              new SnackBar(
+                                content: Text(
+                                  "Error! Book already downloading!",
                                 ),
-                              );
-                              break;
-                            case DownloadStatus.readyToRead:
-                              if (_bookId == null) {
-                                await OpenFile.open(_bookPath);
-                              } else {
-                                FlutterDownloader.open(taskId: _bookId);
-                              }
-
-                              break;
-                          }
-                        },
-                        child: Container(
-                          padding: EdgeInsets.all(7.2),
-                          child: Text(
-                            "$_buttonText",
-                            style:
-                                TextStyle(color: backgroudColor, fontSize: 24),
-                          ),
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(5.7),
-                            border: Border.all(),
-                            color: textColor,
-                          ),
+                                backgroundColor: textColor.withOpacity(.2),
+                              ),
+                            );
+                            break;
+                          case DownloadStatus.readyToRead:
+                            await OpenFile.open(_downloadedBook.bookPath);
+                            await writeToFileLastReadedBook();
+                            break;
+                        }
+                      },
+                      child: Container(
+                        padding: EdgeInsets.all(7.2),
+                        child: Text(
+                          _buttonText,
+                          style: TextStyle(color: backgroudColor, fontSize: 24),
+                        ),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(5.7),
+                          border: Border.all(),
+                          color: textColor,
                         ),
                       ),
-                      SizedBox(
-                        height: 50,
-                      )
-                    ],
-                  ),
+                    ),
+                    SizedBox(
+                      height: 50,
+                    )
+                  ],
                 ),
-              );
-            } else {
-              return Center(
-                child: CircularProgressIndicator(),
-              );
-            }
-          },
-        ));
+              ),
+            );
+          } else {
+            return Center(
+              child: CircularProgressIndicator(),
+            );
+          }
+        },
+      ),
+    );
+  }
+
+  Future writeToFileLastReadedBook() async {
+    var file = File("/storage/emulated/0/Uzlib/last_opened_book.json");
+    await file.writeAsString(json.encode(_downloadedBook.toJson()));
   }
 }

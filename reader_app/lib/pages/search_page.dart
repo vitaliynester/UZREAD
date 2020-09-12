@@ -12,39 +12,6 @@ class SearchPage extends StatefulWidget {
 }
 
 class _SearchPageState extends State<SearchPage> {
-  Image backgroundImage;
-
-  @override
-  void initState() {
-    super.initState();
-    backgroundImage = Image.asset('lib/assets/uzlib_png.png');
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    precacheImage(backgroundImage.image, context);
-  }
-
-  void _changeLanguage(Language language) {
-    Locale _buf;
-    switch (language.languageCode) {
-      case 'en':
-        _buf = Locale(language.languageCode, 'US');
-        break;
-      case 'uz':
-        _buf = Locale(language.languageCode, 'UZ');
-        break;
-      case 'ru':
-        _buf = Locale(language.languageCode, 'RU');
-        break;
-      default:
-        _buf = Locale(language.languageCode, 'US');
-        break;
-    }
-    MyApp.setLocale(context, _buf);
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -65,8 +32,11 @@ class _SearchPageState extends State<SearchPage> {
                 applicationName: "UZLIB",
                 applicationVersion: '1.0',
                 children: <Widget>[
-                  Text(DemoLocalization.of(context)
-                      .getTranslatedValue("about_decription")),
+                  Text(
+                    DemoLocalization.of(context)
+                        .getTranslatedValue("about_decription"),
+                    textAlign: TextAlign.start,
+                  ),
                 ]);
           },
         ),
@@ -105,18 +75,54 @@ class _SearchPageState extends State<SearchPage> {
         ],
       ),
       backgroundColor: backgroudColor,
-      body: SingleChildScrollView(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            SizedBox(
-              height: 50,
+      body: Center(
+        child: Container(
+          height: MediaQuery.of(context).size.height - 50,
+          width: MediaQuery.of(context).size.width,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                SizedBox(
+                  height: 20,
+                ),
+                Container(
+                  child: Image.asset("lib/assets/uzlib_png.png"),
+                  height: MediaQuery.of(context).size.height * .56,
+                ),
+                SearchBookField(),
+                SizedBox(
+                  height: 20,
+                ),
+                Text(
+                  DemoLocalization.of(context)
+                      .getTranslatedValue("search_text"),
+                  style: TextStyle(color: textColor, fontSize: 16),
+                )
+              ],
             ),
-            backgroundImage,
-            SearchBookField()
-          ],
+          ),
         ),
       ),
     );
+  }
+
+  void _changeLanguage(Language language) {
+    Locale _buf;
+    switch (language.languageCode) {
+      case 'en':
+        _buf = Locale(language.languageCode, 'US');
+        break;
+      case 'uz':
+        _buf = Locale(language.languageCode, 'UZ');
+        break;
+      case 'ru':
+        _buf = Locale(language.languageCode, 'RU');
+        break;
+      default:
+        _buf = Locale(language.languageCode, 'US');
+        break;
+    }
+    MyApp.setLocale(context, _buf);
   }
 }

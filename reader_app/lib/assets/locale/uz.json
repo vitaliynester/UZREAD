@@ -1,10 +1,20 @@
 {
-    "about_decription": "Dastur tavsifi",
-    "recently_downloaded_title": "Yaqinda yuklangan",
+    "about_decription": "UZLIB - bu turli janrlardagi kitoblarni yuklab olish uchun mo'ljallangan mobil ilova.\nBog’lanish: stukhtayev@gmail.com",
+    "search_text": "Sarlavha, muallif yoki ISBN-ni kiriting",
+    "recently_downloaded_title": "Yuklangan kitoblar",
     "loading_string": "Ma'lumotlar yuklandi ...",
     "details_title": "Tafsilotlar",
-    "book_authors": "Mualliflar",
-    "book_description": "Tavsif",
-    "download": "Yuklab olish",
-    "last_opened_book": "Oxirgi ochiq kitob"
+    "book_authors": "Muallif",
+    "description": "Tavsif",
+    "book_description": "Kitob tavsifi",
+    "download": "Yuklash",
+    "read": "O’qish",
+    "retry": "Qayta urinib ko'ring",
+    "downloading": "Yuklanmoqda...",
+    "last_opened_book": "Oxirgi ko’rilgan kitob",
+    "no_internet": "Xato! Internet aloqasi yo'q",
+    "less_than_needed_query": "Iltimos, 2 dan ortiq belgini kiriting",
+    "server_connection": "Xato! Serverdan javob yo'q",
+    "no_downloaded_books": "Yuklangan kitoblar ro'yxati bo'sh",
+    "no_last_opened_book": "Siz hali bironta ham kitob ochmadingiz"
 }

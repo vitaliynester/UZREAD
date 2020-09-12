@@ -1,10 +1,20 @@
 {
-    "about_decription": "Страница о программе на русском",
-    "recently_downloaded_title": "НЕДАВНО ЗАГРУЖЕННЫЕ",
+    "about_decription": "UZLIB – приложение для скачивания книг различной тематики.\nПо вопросам обращаться: stukhtayev@gmail.com",
+    "search_text": "Введите название, автора или даже ISBN",
+    "recently_downloaded_title": "Недавно загруженные",
     "loading_string": "Загрузка ...",
-    "details_title": "ПОДРОБНЕЕ",
-    "book_authors": "АВТОРЫ",
-    "book_description": "ОПИСАНИЕ",
-    "download": "ЗАГРУЗИТЬ",
-    "last_opened_book": "ПОСЛЕДНЯЯ ОТКРЫТАЯ КНИГА"
+    "details_title": "Подробнее",
+    "book_authors": "Авторы",
+    "description": "Описание",
+    "book_description": "Описание книги",
+    "download": "Загрузить",
+    "read": "Читать",
+    "retry": "Повторить загрузку",
+    "downloading": "Загрузка...",
+    "last_opened_book": "Последняя просмотренная книга",
+    "no_internet": "Ошибка! Нет подключения к интернету",
+    "less_than_needed_query": "Введите более двух символов",
+    "server_connection": "Ошибка! Отсутсвует ответ от сервера",
+    "no_downloaded_books": "Список загруженных книг пуст",
+    "no_last_opened_book": "Вы еще не открывали книги в этом приложении"
 }

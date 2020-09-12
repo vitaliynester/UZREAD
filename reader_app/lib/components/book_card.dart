@@ -75,9 +75,9 @@ class BookCard extends StatelessWidget {
           ),
           Container(
             height: 80,
-            child: bookModel.image != null
+            child: image != null
                 ? Image.network(
-                    bookModel.image,
+                    image,
                     fit: BoxFit.fill,
                   )
                 : Image.asset(
