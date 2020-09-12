@@ -1,4 +1,4 @@
-import requests
+﻿import requests
 import urllib.parse
 import json
 from bs4 import BeautifulSoup
@@ -14,6 +14,7 @@ app = Flask(__name__)
 
 result_json = []
 result_pages = []
+result_books_images = []
 count_page = 0
 
 def parse(html):
@@ -50,7 +51,7 @@ def parse_page(page):
 
 
 def clear_string(string):
-    return ''.join([c for c in string if ord(c) < 128])
+    return string
 
 
 def parse_book(html):   
@@ -152,6 +153,81 @@ def get_book_data_route():
         return {"msg": str(e)} 
 
 
+def parse_book_and_image(page):
+    tds = page.find_all('td')
+
+    authors = tds[1].getText()
+    title = tds[2].getText()
+    year = tds[4].getText()
+    pages_count = tds[5].getText()
+    total_size = tds[7].getText()
+    extension = tds[8].getText()
+    book_url = tds[9].find_all('a', href=True)[0]['href']
+
+    html = get_request(book_url)
+    soup = BeautifulSoup(html, 'lxml')
+    book_image = soup.find('img')['src']
+
+    buf = urllib.parse.urlparse(book_url)
+    book_scheme = buf.scheme
+    book_netloc = buf.netloc
+
+    result_books_images.append({
+        "authors": clear_string(authors),
+        "title": clear_string(title),
+        "year": year,
+        "pages_count": pages_count,
+        "total_size": total_size,
+        "extension": extension,
+        "url": book_url,
+        "image_book": f"{book_scheme}://{book_netloc}{book_image}"
+    })
+
+
+def work_with_pool_books_and_images(url):
+    html = get_request(url)
+    soup = BeautifulSoup(html, 'lxml')
+
+    tables = soup.find_all('table')
+    trs = tables[2].find_all('tr')[1:]
+    pool = ThreadPool(len(trs))
+    pool.map(parse_book_and_image, trs)
+    pool.close()
+    pool.join()
+
+
+def make_response(total_page):
+    data_to_write = []
+    data_to_write.append({"total_page": total_page})
+    for r in result_books_images:
+        data_to_write.append(r)
+    return data_to_write
+
+
+def get_books_and_images(query, page_num = 1):
+    url = f'http://libgen.rs/search.php?&req={search_format(query)}&phrase=1&view=simple&res=25&column=def&sort=def&sortmode=ASC&page={page_num}'
+    html = get_request(url)
+    count_page = get_count_page(html)
+    if count_page > 0:
+        work_with_pool_books_and_images(url)
+        return make_response(count_page)
+    return {"msg": "No data"}
+
+
+@app.route('/v1/book', methods=['GET'])
+def get_books_with_images():
+    try:
+        result_json.clear()
+        result_pages.clear()
+        result_books_images.clear()
+
+        book_name = request.args.get('book_name', None)
+        book_page = request.args.get('book_page', 1)
+        data = get_books_and_images(book_name, book_page)
+        return jsonify(data)
+    except Exception as e:
+        return {"msg": str(e)}
+
 
 @app.route('/book', methods=['GET'])
 def get_books_by_name():
@@ -165,12 +241,6 @@ def get_books_by_name():
         return jsonify(data)
     except Exception as e:
         return {"msg": str(e)}
-
-
-
-@app.route('/check', methods=['GET'])
-def check_connection():
-    return {"connection": True}
 
 
 if __name__ == '__main__':
