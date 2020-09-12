@@ -28,7 +28,11 @@ class _SearchPageState extends State<SearchPage> {
           onPressed: () {
             showAboutDialog(
                 context: context,
-                applicationIcon: FlutterLogo(),
+                applicationIcon: Image(
+                  image: AssetImage("lib/assets/uzlib_png.png"),
+                  height: 50,
+                  width: 50,
+                ),
                 applicationName: "UZLIB",
                 applicationVersion: '1.0',
                 children: <Widget>[
