@@ -71,6 +71,14 @@ def parse_book(html):
     return result
 
 
+def get_book_download_url(uid):
+    url = f"https://libgen.lc/ads.php?md5={uid}"
+    html = get_request(url)
+    soup = BeautifulSoup(html, 'lxml')
+    book_download_url = soup.find_all('a', href=True)[0]['href']
+    return book_download_url
+
+
 def get_count_page(html):
     soup = BeautifulSoup(html, 'lxml')
     tables = soup.find_all("table")
@@ -145,9 +153,10 @@ def get_book_data_route():
     try:
         result_json.clear()
         result_pages.clear()
-
         book_url = request.args.get('book_url', None)
+        uid = book_url.split('/')[-1]
         data = get_book_data(book_url)
+        data["book_download_url"] = get_book_download_url(uid)
         return jsonify(data)
     except Exception as e:
         return {"msg": str(e)} 
