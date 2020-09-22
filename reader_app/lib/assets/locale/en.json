@@ -1,5 +1,5 @@
 {
-    "about_decription": "UZLIB is an application for downloading books on various genres. \nPlease feel free to contact me if you need any further information: stukhtayev@gmail.com",
+    "about_decription": "UZREAD is an application for downloading books on various genres. \nPlease feel free to contact me if you need any further information: stukhtayev@gmail.com",
     "search_text": "Enter title, author, or even ISBN",
     "recently_downloaded_title": "Recently downloaded",
     "loading_string": "Loading ...",
@@ -16,5 +16,6 @@
     "less_than_needed_query": "Please enter more than 2 symbol",
     "server_connection": "Error! No server response",
     "no_downloaded_books": "The list of downloaded books is empty",
-    "no_last_opened_book": "You haven't opened any books yet"
+    "no_last_opened_book": "You haven't opened any books yet",
+    "university": "Uzbekistan State University of World Languages"
 }

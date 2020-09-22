@@ -1,5 +1,5 @@
 {
-    "about_decription": "UZLIB – приложение для скачивания книг различной тематики.\nПо вопросам обращаться: stukhtayev@gmail.com",
+    "about_decription": "UZREAD – приложение для скачивания книг различной тематики.\nПо вопросам обращаться: stukhtayev@gmail.com",
     "search_text": "Введите название, автора или даже ISBN",
     "recently_downloaded_title": "Недавно загруженные",
     "loading_string": "Загрузка ...",
@@ -16,5 +16,6 @@
     "less_than_needed_query": "Введите более двух символов",
     "server_connection": "Ошибка! Отсутсвует ответ от сервера",
     "no_downloaded_books": "Список загруженных книг пуст",
-    "no_last_opened_book": "Вы еще не открывали книги в этом приложении"
+    "no_last_opened_book": "Вы еще не открывали книги в этом приложении",
+    "university": "Узбекский государственный университет мировых языков"
 }

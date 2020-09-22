@@ -1,5 +1,5 @@
 {
-    "about_decription": "UZLIB - bu turli janrlardagi kitoblarni yuklab olish uchun mo'ljallangan mobil ilova.\nBog’lanish: stukhtayev@gmail.com",
+    "about_decription": "UZREAD - bu turli janrlardagi kitoblarni yuklab olish uchun mo'ljallangan mobil ilova.\nBog’lanish: stukhtayev@gmail.com",
     "search_text": "Sarlavha, muallif yoki ISBN-ni kiriting",
     "recently_downloaded_title": "Yuklangan kitoblar",
     "loading_string": "Ma'lumotlar yuklandi ...",
@@ -16,5 +16,6 @@
     "less_than_needed_query": "Iltimos, 2 dan ortiq belgini kiriting",
     "server_connection": "Xato! Serverdan javob yo'q",
     "no_downloaded_books": "Yuklangan kitoblar ro'yxati bo'sh",
-    "no_last_opened_book": "Siz hali bironta ham kitob ochmadingiz"
+    "no_last_opened_book": "Siz hali bironta ham kitob ochmadingiz",
+    "university": "O‘zbekiston davlat jahon tillari universiteti"
 }
