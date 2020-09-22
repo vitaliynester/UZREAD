@@ -90,7 +90,7 @@ class _PreDownloadBookPageState extends State<PreDownloadBookPage> {
       }
       bool existBook = await checkFileExist(
           "${book.bookName.replaceAll(" ", "_")}.${widget.extension}",
-          "/storage/emulated/0/Uzlib/books");
+          "/storage/emulated/0/Uzread/books");
       if (existBook && tasks.length == 0) {
         setStateIfMounted(() {
           _status = DownloadStatus.readyToRead;
@@ -201,10 +201,10 @@ class _PreDownloadBookPageState extends State<PreDownloadBookPage> {
     final fileBookName = fileName + ".${widget.extension}";
     final fileImageName = fileName + ".jpg";
     final myImageDir =
-        await new io.Directory("/storage/emulated/0/Uzlib/images")
+        await new io.Directory("/storage/emulated/0/Uzread/images")
             .create(recursive: true);
 
-    final myBookDir = await new io.Directory("/storage/emulated/0/Uzlib/books")
+    final myBookDir = await new io.Directory("/storage/emulated/0/Uzread/books")
         .create(recursive: true);
 
     await FlutterDownloader.enqueue(
@@ -252,7 +252,7 @@ class _PreDownloadBookPageState extends State<PreDownloadBookPage> {
   }
 
   Future<bool> checkBookExist(DownloadedBookModel checkedBook) async {
-    var data = await io.File("/storage/emulated/0/Uzlib/downloaded_books.json")
+    var data = await io.File("/storage/emulated/0/Uzread/downloaded_books.json")
         .readAsString();
     List<DownloadedBookModel> existsBooks = new List<DownloadedBookModel>();
     try {
@@ -296,9 +296,9 @@ class _PreDownloadBookPageState extends State<PreDownloadBookPage> {
   DownloadedBookModel createObjectAfterDownload(
       PreDownloadModel downloadedBook) {
     String fileName = downloadedBook.bookName.replaceAll(" ", "_");
-    String imagePath = "/storage/emulated/0/Uzlib/images/$fileName.jpg";
+    String imagePath = "/storage/emulated/0/Uzread/images/$fileName.jpg";
     String bookPath =
-        "/storage/emulated/0/Uzlib/books/$fileName.${widget.extension}";
+        "/storage/emulated/0/Uzread/books/$fileName.${widget.extension}";
     DownloadedBookModel book = new DownloadedBookModel(
         bookPath,
         downloadedBook.bookName,
@@ -310,22 +310,22 @@ class _PreDownloadBookPageState extends State<PreDownloadBookPage> {
 
   Future writeToDownloadedList(DownloadedBookModel book) async {
     bool existFile = await checkFileExist(
-        "downloaded_books.json", "/storage/emulated/0/Uzlib");
+        "downloaded_books.json", "/storage/emulated/0/Uzread");
 
     if (existFile) {
       var data =
-          await io.File("/storage/emulated/0/Uzlib/downloaded_books.json")
+          await io.File("/storage/emulated/0/Uzread/downloaded_books.json")
               .readAsString();
       bool existBookInList = await checkBookExist(book);
 
       if (!existBookInList) {
         var list = getBooksFromFile(data);
         list.add(book);
-        var file = io.File("/storage/emulated/0/Uzlib/downloaded_books.json");
+        var file = io.File("/storage/emulated/0/Uzread/downloaded_books.json");
         await file.writeAsString(json.encode(list));
       }
     } else {
-      var file = io.File("/storage/emulated/0/Uzlib/downloaded_books.json");
+      var file = io.File("/storage/emulated/0/Uzread/downloaded_books.json");
       await file.writeAsString(json.encode(book.toJson()));
     }
   }
@@ -466,7 +466,7 @@ class _PreDownloadBookPageState extends State<PreDownloadBookPage> {
   }
 
   Future writeToFileLastReadedBook() async {
-    var file = File("/storage/emulated/0/Uzlib/last_opened_book.json");
+    var file = File("/storage/emulated/0/Uzread/last_opened_book.json");
     await file.writeAsString(json.encode(_downloadedBook.toJson()));
   }
 }

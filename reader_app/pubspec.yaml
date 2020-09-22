@@ -1,5 +1,5 @@
 name: reader_app
-description: UZLIB is an application for downloading books on various genres.
+description: UZREAD is an application for downloading books on various genres.
 
 publish_to: 'none'
 version: 1.0.0+1
@@ -28,8 +28,8 @@ dev_dependencies:
 
 flutter_icons:
   android: true
-  image_path: "lib/assets/uzlib_png.png"
-  image_path_android: "lib/assets/uzlib_png.png"  
+  image_path: "lib/assets/logo.png"
+  image_path_android: "lib/assets/logo.png"  
 
 flutter:
 

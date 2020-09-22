@@ -107,11 +107,11 @@ Future<bool> checkBookFileExist(String bookPath) async {
 
 Future<List<DownloadedBookModel>> removeDeletedBooks() async {
   bool existJson = await checkFileExist(
-      "downloaded_books.json", "/storage/emulated/0/Uzlib");
+      "downloaded_books.json", "/storage/emulated/0/Uzread");
   if (existJson) {
     List<DownloadedBookModel> existingBooks = new List<DownloadedBookModel>();
     var jsonSourceData =
-        await File("/storage/emulated/0/Uzlib/downloaded_books.json")
+        await File("/storage/emulated/0/Uzread/downloaded_books.json")
             .readAsString();
     var allBooks = getBooksFromFile(jsonSourceData);
     for (var book in allBooks) {
@@ -119,7 +119,7 @@ Future<List<DownloadedBookModel>> removeDeletedBooks() async {
         existingBooks.add(book);
       }
     }
-    await File("/storage/emulated/0/Uzlib/downloaded_books.json")
+    await File("/storage/emulated/0/Uzread/downloaded_books.json")
         .writeAsString(json.encode(existingBooks));
     return existingBooks;
   }

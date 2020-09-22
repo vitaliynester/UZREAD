@@ -29,12 +29,12 @@ class _SearchPageState extends State<SearchPage> {
             showAboutDialog(
                 context: context,
                 applicationIcon: Image(
-                  image: AssetImage("lib/assets/uzlib_png.png"),
+                  image: AssetImage("lib/assets/logo.png"),
                   height: 50,
                   width: 50,
                 ),
-                applicationName: "UZLIB",
-                applicationLegalese: "© 2020 UZLIB",
+                applicationName: "UZREAD",
+                applicationLegalese: "© 2020 UZREAD",
                 applicationVersion: '1.0',
                 children: <Widget>[
                   Text(
@@ -92,8 +92,20 @@ class _SearchPageState extends State<SearchPage> {
                   height: 20,
                 ),
                 Container(
-                  child: Image.asset("lib/assets/uzlib_png.png"),
-                  height: MediaQuery.of(context).size.height * .56,
+                  child: Image.asset("lib/assets/logo.png"),
+                  height: MediaQuery.of(context).size.height * .45,
+                ),
+                Container(
+                  width: MediaQuery.of(context).size.width * .6,
+                  child: Text(
+                    DemoLocalization.of(context)
+                        .getTranslatedValue("university"),
+                    style: TextStyle(color: textColor, fontSize: 16),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+                SizedBox(
+                  height: 20,
                 ),
                 SearchBookField(),
                 SizedBox(

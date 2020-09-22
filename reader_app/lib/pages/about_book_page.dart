@@ -22,7 +22,7 @@ class _AboutBookPageState extends State<AboutBookPage> {
   }
 
   Future writeToFileLastReadedBook() async {
-    var file = File("/storage/emulated/0/Uzlib/last_opened_book.json");
+    var file = File("/storage/emulated/0/Uzread/last_opened_book.json");
     await file.writeAsString(json.encode(widget.book.toJson()));
   }
 

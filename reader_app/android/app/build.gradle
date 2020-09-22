@@ -43,7 +43,7 @@ android {
     }
 
     defaultConfig {
-        applicationId "uzlibapp.flutter.uzlib"
+        applicationId "uzreadapp.flutter.uzread"
         minSdkVersion 16
         targetSdkVersion 29
         versionCode flutterVersionCode.toInteger()

@@ -60,10 +60,10 @@ class _LastOpenedBookPageState extends State<LastOpenedBookPage> {
 
 Future<DownloadedBookModel> readLastOpenedBook() async {
   bool existJson = await checkFileExist(
-      "last_opened_book.json", "/storage/emulated/0/Uzlib");
+      "last_opened_book.json", "/storage/emulated/0/Uzread");
   if (existJson) {
     var jsonSourceData =
-        await File("/storage/emulated/0/Uzlib/last_opened_book.json")
+        await File("/storage/emulated/0/Uzread/last_opened_book.json")
             .readAsString();
     DownloadedBookModel book =
         new DownloadedBookModel.fromJson(json.decode(jsonSourceData));

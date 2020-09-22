@@ -8,7 +8,7 @@
     
     <application
         android:name="io.flutter.app.FlutterApplication"
-        android:label="UZLIB"
+        android:label="UZREAD"
         android:usesCleartextTraffic="true"
         android:icon="@mipmap/ic_launcher">
 
