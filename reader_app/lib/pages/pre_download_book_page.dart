@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:io' as io;
 import 'dart:io';
 import 'dart:isolate';
 import 'dart:ui';
@@ -200,13 +199,11 @@ class _PreDownloadBookPageState extends State<PreDownloadBookPage> {
     final fileName = name.replaceAll(" ", "_");
     final fileBookName = fileName + ".${widget.extension}";
     final fileImageName = fileName + ".jpg";
-    final myImageDir =
-        await new io.Directory("/storage/emulated/0/Uzread/images")
-            .create(recursive: true);
-
-    final myBookDir = await new io.Directory("/storage/emulated/0/Uzread/books")
+    final myImageDir = await Directory("/storage/emulated/0/Uzread/images")
         .create(recursive: true);
 
+    final myBookDir = await Directory("/storage/emulated/0/Uzread/books")
+        .create(recursive: true);
     await FlutterDownloader.enqueue(
       url: imageUrl,
       savedDir: myImageDir.path,
@@ -221,6 +218,7 @@ class _PreDownloadBookPageState extends State<PreDownloadBookPage> {
       showNotification: true,
       openFileFromNotification: true,
     );
+
     var downloadedBook = createObjectAfterDownload(_bookToFile);
     _downloadedBook = downloadedBook;
     await writeToDownloadedList(downloadedBook);
@@ -252,7 +250,7 @@ class _PreDownloadBookPageState extends State<PreDownloadBookPage> {
   }
 
   Future<bool> checkBookExist(DownloadedBookModel checkedBook) async {
-    var data = await io.File("/storage/emulated/0/Uzread/downloaded_books.json")
+    var data = await File("/storage/emulated/0/Uzread/downloaded_books.json")
         .readAsString();
     List<DownloadedBookModel> existsBooks = new List<DownloadedBookModel>();
     try {
@@ -275,7 +273,7 @@ class _PreDownloadBookPageState extends State<PreDownloadBookPage> {
   }
 
   Future<bool> checkFileExist(String fileName, String filePath) async {
-    bool exist = await io.File("$filePath/$fileName").exists();
+    bool exist = await File("$filePath/$fileName").exists();
     return exist;
   }
 
@@ -313,19 +311,18 @@ class _PreDownloadBookPageState extends State<PreDownloadBookPage> {
         "downloaded_books.json", "/storage/emulated/0/Uzread");
 
     if (existFile) {
-      var data =
-          await io.File("/storage/emulated/0/Uzread/downloaded_books.json")
-              .readAsString();
+      var data = await File("/storage/emulated/0/Uzread/downloaded_books.json")
+          .readAsString();
       bool existBookInList = await checkBookExist(book);
 
       if (!existBookInList) {
         var list = getBooksFromFile(data);
         list.add(book);
-        var file = io.File("/storage/emulated/0/Uzread/downloaded_books.json");
+        var file = File("/storage/emulated/0/Uzread/downloaded_books.json");
         await file.writeAsString(json.encode(list));
       }
     } else {
-      var file = io.File("/storage/emulated/0/Uzread/downloaded_books.json");
+      var file = File("/storage/emulated/0/Uzread/downloaded_books.json");
       await file.writeAsString(json.encode(book.toJson()));
     }
   }
