@@ -2,7 +2,7 @@ name: reader_app
 description: UZREAD is an application for downloading books on various genres.
 
 publish_to: 'none'
-version: 1.0.0+2
+version: 1.1.0+2
 
 environment:
   sdk: ">=2.7.0 <3.0.0"
