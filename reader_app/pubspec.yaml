@@ -28,8 +28,8 @@ dev_dependencies:
 
 flutter_icons:
   android: true
-  image_path: "lib/assets/logo.png"
-  image_path_android: "lib/assets/logo.png"  
+  image_path: "lib/assets/logo_app.png"
+  image_path_android: "lib/assets/logo_app.png"  
 
 flutter:
 
