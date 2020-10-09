@@ -40,18 +40,14 @@ def parse_page(page):
     book_url = tds[9].find_all('a', href=True)[0]['href']
 
     result_pages.append({
-        "authors": clear_string(authors),
-        "title": clear_string(title),
+        "authors": authors,
+        "title": title,
         "year": year,
         "pages_count": pages_count,
         "total_size": total_size,
         "extension": extension,
         "url": book_url
     })
-
-
-def clear_string(string):
-    return string
 
 
 def parse_book(html):   
@@ -133,8 +129,6 @@ def get_book_data(url):
 
     data = parse_book(html)
     data["book_image"] = f"{book_scheme}://{book_netloc}{data['book_image']}"
-    for _, value in data.items():
-        value = clear_string(value)
     return data
 
 
@@ -182,8 +176,8 @@ def parse_book_and_image(page):
     book_netloc = buf.netloc
 
     result_books_images.append({
-        "authors": clear_string(authors),
-        "title": clear_string(title),
+        "authors": authors,
+        "title": title,
         "year": year,
         "pages_count": pages_count,
         "total_size": total_size,
