@@ -1,14 +1,15 @@
-﻿import requests
+﻿import json
 import urllib.parse
-import json
-from bs4 import BeautifulSoup
 from datetime import datetime
 from math import ceil
 from multiprocessing import Pool, cpu_count
-from time import sleep
 from multiprocessing.dummy import Pool as ThreadPool
-from flask import Flask, request, jsonify
+from time import sleep
 
+import requests
+from bs4 import BeautifulSoup
+from flask import Flask, jsonify, request
+from config import Config
 
 app = Flask(__name__)
 
@@ -56,7 +57,7 @@ def parse_book(html):
     book_name = soup.find('h1').getText()
     book_authors = soup.find_all('p')[0].getText().replace('Author(s): ','')
     book_description = soup.find_all('div')[-1].getText().replace('Description:*  ','').replace('Description:','').replace('\n', '')
-    book_download_url = soup.find_all('a', href=True)[0]['href']
+    book_download_url = soup.find_all('a', href=True)[1]['href']
     result = {
         'book_image': book_image,
         'book_name': book_name,
@@ -150,7 +151,7 @@ def get_book_data_route():
         book_url = request.args.get('book_url', None)
         uid = book_url.split('/')[-1]
         data = get_book_data(book_url)
-        data["book_download_url"] = get_book_download_url(uid)
+        #data["book_download_url"] = get_book_download_url(uid)
         return jsonify(data)
     except Exception as e:
         return {"msg": str(e)} 
@@ -247,4 +248,6 @@ def get_books_by_name():
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=Config.DEBUG_STATUS,
+            port=Config.HOST_PORT,
+            host=Config.HOST_URL)
