@@ -1,15 +1,13 @@
-﻿import json
-import urllib.parse
-from datetime import datetime
+﻿import urllib.parse
 from math import ceil
-from multiprocessing import Pool, cpu_count
 from multiprocessing.dummy import Pool as ThreadPool
-from time import sleep
 
 import requests
 from bs4 import BeautifulSoup
 from flask import Flask, jsonify, request
+
 from config import Config
+import controller
 
 app = Flask(__name__)
 
@@ -18,18 +16,8 @@ result_pages = []
 result_books_images = []
 count_page = 0
 
-def parse(html):
-    soup = BeautifulSoup(html, 'lxml')
 
-    tables = soup.find_all('table')
-    trs = tables[2].find_all('tr')[1:]
-    pool = ThreadPool(len(trs))
-    pool.map(parse_page, trs)
-    pool.close()
-    pool.join()
-
-
-def parse_page(page):
+def parse_fragment(page):
     tds = page.find_all('td')
 
     authors = tds[1].getText()
@@ -40,7 +28,7 @@ def parse_page(page):
     extension = tds[8].getText()
     book_url = tds[9].find_all('a', href=True)[0]['href']
 
-    result_pages.append({
+    result = {
         "authors": authors,
         "title": title,
         "year": year,
@@ -48,15 +36,23 @@ def parse_page(page):
         "total_size": total_size,
         "extension": extension,
         "url": book_url
-    })
+    }
+    return result
 
 
-def parse_book(html):   
+def parse_page(page):
+    fragment = parse_fragment(page)
+    result_pages.append(fragment)
+
+
+def parse_book(html):
     soup = BeautifulSoup(html, 'lxml')
     book_image = soup.find('img')['src']
     book_name = soup.find('h1').getText()
-    book_authors = soup.find_all('p')[0].getText().replace('Author(s): ','')
-    book_description = soup.find_all('div')[-1].getText().replace('Description:*  ','').replace('Description:','').replace('\n', '')
+    book_authors = soup.find_all('p')[0].getText().replace('Author(s): ', '')
+    book_description = soup.find_all('div')[-1].getText().replace('Description:*  ', '')\
+                                                         .replace('Description:', '')\
+                                                         .replace('\n', '')
     book_download_url = soup.find_all('a', href=True)[1]['href']
     result = {
         'book_image': book_image,
@@ -68,14 +64,6 @@ def parse_book(html):
     return result
 
 
-def get_book_download_url(uid):
-    url = f"https://libgen.lc/ads.php?md5={uid}"
-    html = get_request(url)
-    soup = BeautifulSoup(html, 'lxml')
-    book_download_url = soup.find_all('a', href=True)[0]['href']
-    return book_download_url
-
-
 def get_count_page(html):
     soup = BeautifulSoup(html, 'lxml')
     tables = soup.find_all("table")
@@ -83,7 +71,7 @@ def get_count_page(html):
     if int(buf[0]) >= 25:
         book_per_page = int(buf[9][0:2])
         count_elements = int(tables[1].getText().split(' ')[0])
-        return ceil(count_elements/book_per_page)
+        return ceil(count_elements / book_per_page)
     elif int(buf[0]) == 0:
         return 0
     return 1
@@ -99,30 +87,12 @@ def get_request(url):
     return r.text
 
 
-def write_to_file(total_page):
-    data_to_write = []
-    data_to_write.append({"total_page": total_page})
-    for r in result_json:
-        data_to_write.append(r)
-    return data_to_write
-
-
-def add_to_result():
-    result_json.extend(result_pages)
-
-
-def work_with_pool(url):
-    html = get_request(url)
-    parse(html)
-    add_to_result()
-
-
 def search_format(string):
     return string.replace(' ', '+')
 
 
 def get_book_data(url):
-    html = get_request(url)    
+    html = get_request(url)
 
     buf = urllib.parse.urlparse(url)
     book_scheme = buf.scheme
@@ -133,57 +103,25 @@ def get_book_data(url):
     return data
 
 
-def get_page(query, page_num = 1):
-    url = f'http://libgen.rs/search.php?&req={search_format(query)}&phrase=1&view=simple&res=25&column=def&sort=def&sortmode=ASC&page={page_num}'
-    html = get_request(url)
-    count_page = get_count_page(html)
-    if count_page > 0:
-        work_with_pool(url)
-        return write_to_file(count_page)
-    return {"msg": "No data"}
-
-
-@app.route('/book_url', methods=['GET'])
-def get_book_data_route():
-    try:
-        result_json.clear()
-        result_pages.clear()
-        book_url = request.args.get('book_url', None)
-        uid = book_url.split('/')[-1]
-        data = get_book_data(book_url)
-        #data["book_download_url"] = get_book_download_url(uid)
-        return jsonify(data)
-    except Exception as e:
-        return {"msg": str(e)} 
-
-
 def parse_book_and_image(page):
-    tds = page.find_all('td')
+    fragment = parse_fragment(page)
 
-    authors = tds[1].getText()
-    title = tds[2].getText()
-    year = tds[4].getText()
-    pages_count = tds[5].getText()
-    total_size = tds[7].getText()
-    extension = tds[8].getText()
-    book_url = tds[9].find_all('a', href=True)[0]['href']
-
-    html = get_request(book_url)
+    html = get_request(fragment['url'])
     soup = BeautifulSoup(html, 'lxml')
     book_image = soup.find('img')['src']
 
-    buf = urllib.parse.urlparse(book_url)
+    buf = urllib.parse.urlparse(fragment['url'])
     book_scheme = buf.scheme
     book_netloc = buf.netloc
 
     result_books_images.append({
-        "authors": authors,
-        "title": title,
-        "year": year,
-        "pages_count": pages_count,
-        "total_size": total_size,
-        "extension": extension,
-        "url": book_url,
+        "authors": fragment['authors'],
+        "title": fragment['title'],
+        "year": fragment['year'],
+        "pages_count": fragment['pages_count'],
+        "total_size": fragment['total_size'],
+        "extension": fragment['extension'],
+        "url": fragment['url'],
         "image_book": f"{book_scheme}://{book_netloc}{book_image}"
     })
 
@@ -208,7 +146,7 @@ def make_response(total_page):
     return data_to_write
 
 
-def get_books_and_images(query, page_num = 1):
+def get_books_and_images(query, page_num=1):
     url = f'http://libgen.rs/search.php?&req={search_format(query)}&phrase=1&view=simple&res=25&column=def&sort=def&sortmode=ASC&page={page_num}'
     html = get_request(url)
     count_page = get_count_page(html)
@@ -218,12 +156,54 @@ def get_books_and_images(query, page_num = 1):
     return {"msg": "No data"}
 
 
+def clear_temporary_arrays():
+    result_json.clear()
+    result_pages.clear()
+    result_books_images.clear()
+
+
+def get_info_from_url_book(book_url: str):
+    try:
+        data_from_url = get_book_data(book_url)
+        get_books_and_images(data_from_url['book_name'])
+        for res in result_books_images:
+            if res['url'] == book_url:
+                return jsonify(res)
+        raise Exception('No book with that url')
+    except Exception as e:
+        raise e
+
+
+def get_info_from_book_object(book_data, book_url):
+    try:
+        get_books_and_images(book_data['book_name'])
+        for res in result_books_images:
+            if res['url'] == book_url:
+                return res
+        raise Exception('No book with that url')
+    except Exception as e:
+        raise e
+
+
+@app.route('/book_url', methods=['GET'])
+def get_book_data_route():
+    try:
+        clear_temporary_arrays()
+
+        book_url = request.args.get('book_url', None)
+        data = get_book_data(book_url)
+        download_info = get_info_from_book_object(data, book_url)
+        download_info['title'] = data['book_name']
+        controller.write_to_sheets(download_info)
+        return jsonify(data)
+    except Exception as e:
+        return {"msg": str(e)}
+
+
 @app.route('/v1/book', methods=['GET'])
 def get_books_with_images():
     try:
-        result_json.clear()
-        result_pages.clear()
-        result_books_images.clear()
+        clear_temporary_arrays()
 
         book_name = request.args.get('book_name', None)
         book_page = request.args.get('book_page', 1)
@@ -233,18 +213,14 @@ def get_books_with_images():
         return {"msg": str(e)}
 
 
-@app.route('/book', methods=['GET'])
-def get_books_by_name():
+@app.route('/v1/info_book', methods=['GET'])
+def get_info_from_url_book_route():
     try:
-        result_json.clear()
-        result_pages.clear()
-
-        book_name = request.args.get('book_name', None)
-        book_page = request.args.get('book_page', 1)
-        data = get_page(book_name, int(book_page))
-        return jsonify(data)
+        book_url = request.args.get('book_url', None)
+        res = get_info_from_url_book(book_url)
+        return res
     except Exception as e:
-        return {"msg": str(e)}
+        return jsonify({'msg': str(e)})
 
 
 if __name__ == '__main__':
