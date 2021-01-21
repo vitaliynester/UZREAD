@@ -2,6 +2,11 @@
 from math import ceil
 from multiprocessing.dummy import Pool as ThreadPool
 
+import logging
+from logging.handlers import RotatingFileHandler
+from time import strftime
+import traceback
+
 import requests
 from bs4 import BeautifulSoup
 from flask import Flask, jsonify, request
@@ -223,7 +228,33 @@ def get_info_from_url_book_route():
         return jsonify({'msg': str(e)})
 
 
+@app.after_request
+def after_request(response):
+    timestamp = strftime('[%d-%m-%Y %H:%M:%S]')
+    logger.info(f'INFO: {timestamp} {request.remote_addr} '
+                f'[{request.method} {request.full_path} {request.scheme}] '
+                f'{response.status}')
+    return response
+
+
+@app.errorhandler(Exception)
+def exceptions(e):
+    tb = traceback.format_exc()
+    timestamp = strftime('[%d-%m-%Y %H:%M:%S]')
+
+    logger.error(f'ERROR: {timestamp} {request.remote_addr} '
+                 f'[{request.method} {request.full_path} {request.scheme}] \n'
+                 f'{tb}')
+    return e.status_code
+
+
 if __name__ == '__main__':
+    handler = RotatingFileHandler('uzread.log',
+                                  maxBytes=100000,
+                                  backupCount=5)
+    logger = logging.getLogger('tdm')
+    logger.setLevel(logging.INFO)
+    logger.addHandler(handler)
     app.run(debug=Config.DEBUG_STATUS,
             port=Config.HOST_PORT,
             host=Config.HOST_URL)
